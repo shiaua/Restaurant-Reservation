@@ -42,8 +42,22 @@ const hasMobileNumber = (req, res, next) => {
 
 const hasReservationDate = (req, res, next) => {
   const { data: { reservation_date } = {} } = req.body;
-  console.log(reservation_date);
+
   if (reservation_date && !containsAnyLetter(reservation_date)) {
+    const date = new Date(reservation_date); 
+    if (date.getDay() === 1) {
+      next({
+        status:400,
+        message: "Sorry! We're closed on Tuesday!"
+      })
+    }
+
+    if (new Date() > date) {
+      next({
+        status: 400,
+        message: "Sorry! You need to book a reservation in the future!"
+      })
+    }
     return next();
   }
   return next({ status: 400, message: "a reservation_date is required" });
