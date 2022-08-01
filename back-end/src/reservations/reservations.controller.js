@@ -5,7 +5,7 @@ function containsAnyLetter(str) {
   return /[a-zA-Z]/.test(str);
 }
 
-async function list(req, res) {
+async function list(req, res, next) {
   const data = await service.list(req.query.date);
   res.json({ data });
 }
@@ -97,7 +97,36 @@ async function create(req, res, next) {
     reservation_date,
     reservation_time,
     people,
-  } = req.body.data;
+    status,
+  } = req.body.data; 
+
+  if (status === "booked") {
+    const result = await service.create({
+      first_name,
+      last_name,
+      mobile_number,
+      reservation_date,
+      reservation_time,
+      people,
+      status,
+    })
+    res.status(201)
+    res.json({data: result})
+  }
+
+  if (status === "seated") {
+    return next({
+      status: 400,
+      message: "status incorrectly labeled as seated"
+    })
+  }
+
+  if (status === "finished") {
+    return next({
+      status: 400,
+      message: "status incorrectly labeled as finished"
+    })
+  }
 
   const result = await service.create({
     first_name,
@@ -112,20 +141,74 @@ async function create(req, res, next) {
 }
 
 async function reservationExists(req, res, next) {
-  const reservation = await service.read(req.params.reservation_Id); 
+  const reservation = await service.read(req.params.reservation_id); 
   if (reservation) {
     res.locals.reservation = reservation; 
     return next();
   }
   return next({
     status: 404,
-    message: `Reservation ${req.params.reservation_Id} does not exist.`, 
+    message: `Reservation ${req.params.reservation_id} does not exist.`, 
   })
 }
 
 async function read(req, res, next) {
   const {reservation} = res.locals;
   res.json({data: reservation})
+}
+
+async function update(req, res) {
+  const {
+    first_name,
+    last_name,
+    mobile_number,
+    people,
+    reservation_date,
+    reservation_time,
+  } = req.body.data
+
+  const data = await service.update(
+    {
+      first_name,
+      last_name,
+      mobile_number,
+      people,
+      reservation_date,
+      reservation_time,
+    },
+    res.locals.reservation.reservation_id
+  )
+  res.json({data})
+}
+
+const hasStatus = (req, res, next) => {
+  const {data: {status} = {}} = req.body
+
+  if (
+    status === "booked" ||
+    status === "seated" ||
+    status === "cancelled" ||
+    status === "finished"
+  ) {
+    if (res.locals.reservation.status === "finished") {
+      return next({
+        status: 400,
+        message: `The reservation has already finished`
+      })
+    }
+    return next();
+  }
+  return next({
+    status: 400,
+    message: `status ${status} is unacceptable or finished`
+  })
+}
+
+async function updateStatus(req, res, next) {
+  const {status} = req.body.data
+  const data = await service.update({status,}, res.locals.reservation.reservation_id)
+
+  res.json({data})
 }
 
 module.exports = {
@@ -141,4 +224,19 @@ module.exports = {
     asyncErrorBoundary(create),
   ],
   read: [asyncErrorBoundary(reservationExists), read],
+  update: [
+    asyncErrorBoundary(reservationExists),
+    hasFirstName,
+    hasLastName,
+    hasMobileNumber,
+    hasReservationDate,
+    hasReservationTime,
+    hasPeople,
+    asyncErrorBoundary(update),
+  ],
+  updateStatus: [
+    asyncErrorBoundary(reservationExists),
+    hasStatus,
+    asyncErrorBoundary(updateStatus),
+  ],
 };
