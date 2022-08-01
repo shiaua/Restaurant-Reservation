@@ -74,7 +74,7 @@ async function tableExists(req, res, next) {
     }
     next({
         status: 404, 
-        message: `Table ${table_id} cannot be found`
+        message: `Table ${req.params.table_id} cannot be found`
     })
 }
 
@@ -91,7 +91,7 @@ async function reservationExists(req, res, next) {
         }
         return next({
             status: 404,
-            message: `999`
+            message: `reservations ${reservation_id} does not exist`
         })
     } else {
         return next({
@@ -119,6 +119,17 @@ const hasAvailibility = (req, res, next) => {
     })
 }
 
+
+async function destroy(req, res, next) {
+    if (res.locals.table.reservation_id) {
+        await service.destroy(res.locals.table.reservation_id)
+        res.sendStatus(200)
+    } else next({
+        status: 400,
+        message: "not occupied"
+    })
+}
+
 module.exports = {
     list: asyncErrorBoundary(list),
     create: [
@@ -133,5 +144,9 @@ module.exports = {
         reservationExists,
         hasAvailibility,
         asyncErrorBoundary(update),
+    ],
+    delete: [
+        asyncErrorBoundary(tableExists),
+        asyncErrorBoundary(destroy),
     ],
 }
