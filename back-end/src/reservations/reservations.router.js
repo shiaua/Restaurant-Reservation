@@ -8,6 +8,12 @@
  const controller = require("./reservations.controller");
  const methodNotAllowed = require("../errors/methodNotAllowed");
  
+
+ router 
+  .route("/:reservation_Id([0-9]+)")
+  .get(controller.read)
+  .all(methodNotAllowed)
+  
  router
    .route("/")
    .get(controller.list)
