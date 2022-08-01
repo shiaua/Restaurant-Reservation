@@ -36,6 +36,12 @@ function readReservation(reservation_id) {
         .first();
 }
 
+function destroy(reservation_id) {
+    return knex("tables")
+        .where({reservation_id})
+        .del(reservation_id);
+}
+
 
 module.exports = {
     list,
@@ -43,4 +49,5 @@ module.exports = {
     read,
     update,
     readReservation,
+    destroy,
 }
