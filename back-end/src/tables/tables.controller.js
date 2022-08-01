@@ -126,7 +126,7 @@ const hasAvailibility = (req, res, next) => {
 
 
 async function destroy(req, res, next) {
-    if (res.locals.table) {
+    if (res.locals.table.reservation_id) {
         await service.destroy(res.locals.table)
         res.sendStatus(200)
     } else next({
