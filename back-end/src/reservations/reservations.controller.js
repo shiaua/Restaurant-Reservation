@@ -6,6 +6,10 @@ function containsAnyLetter(str) {
 }
 
 async function list(req, res, next) {
+  if (req.query.mobile_number) {
+    const data = await service.search(req.query.mobile_number)
+    res.json({data})
+  }
   const data = await service.list(req.query.date);
   res.json({ data });
 }
