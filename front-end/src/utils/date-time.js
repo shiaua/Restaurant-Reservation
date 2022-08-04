@@ -1,6 +1,7 @@
 const dateFormat = /\d\d\d\d-\d\d-\d\d/;
 const timeFormat = /\d\d:\d\d/;
-
+// const date = '2022-07-19-00:010Z'
+// date.toUTC('2022-07-19-00:010Z') // 2022-07-19-00:010Z
 /**
  * Formats a Date object as YYYY-MM-DD.
  *
@@ -57,7 +58,7 @@ export function today() {
  *  the date one day prior to currentDate, formatted as YYYY-MM-DD
  */
 export function previous(currentDate) {
-  let [ year, month, day ] = currentDate.split("-");
+  let [year, month, day] = currentDate.split("-");
   month -= 1;
   const date = new Date(year, month, day);
   date.setMonth(date.getMonth());
@@ -73,10 +74,43 @@ export function previous(currentDate) {
  *  the date one day after currentDate, formatted as YYYY-MM-DD
  */
 export function next(currentDate) {
-  let [ year, month, day ] = currentDate.split("-");
+  let [year, month, day] = currentDate.split("-");
   month -= 1;
   const date = new Date(year, month, day);
   date.setMonth(date.getMonth());
   date.setDate(date.getDate() + 1);
   return asDateString(date);
+}
+
+//Validate dates prior to sending the form
+export function validateReservationDateTime(reservationInfo) {
+  let errorsArray = [];
+  const currentDateTime = new Date();
+  const reservationDateTimeString =
+    reservationInfo.reservation_date + "T" + reservationInfo.reservation_time;
+
+  //Check if the reservation date is not a tuesday or in the past
+  const reservationDateTime = new Date(reservationDateTimeString);
+  if (reservationDateTime.getDay() === 2) {
+    errorsArray.push({ message: "The restaurant is closed on Tuesday." });
+  }
+  if (reservationDateTime < currentDateTime) {
+    errorsArray.push({
+      message: "Reservation date/time must occur in the future.",
+    });
+  }
+
+  //Check if the reservation time is within the valid timeframe
+  const resHour = reservationDateTime.getHours();
+  const resMinutes = reservationDateTime.getMinutes();
+  if ((resHour === 10 && resMinutes <= 29) || resHour < 10) {
+    errorsArray.push({
+      message: "Please select a time between 10:30 and 21:30",
+    });
+  } else if ((resHour === 21 && resMinutes >= 31) || resHour > 21) {
+    errorsArray.push({
+      message: "Please select a time between 10:30 and 21:30",
+    });
+  }
+  return errorsArray;
 }
